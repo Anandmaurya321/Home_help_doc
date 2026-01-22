@@ -1,0 +1,52 @@
+services:
+  # 1. MongoDB Service
+  mongo:
+    image: mongo:latest
+    container_name: home_help_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db # Persist data even if container stops
+    networks:
+      - app-network
+
+  # 2. Backend Service
+  backend:
+    build: ./backend
+    container_name: home_help_backend
+    ports:
+      - "3000:3000" # Maps host:3000 to container:3000
+    env_file:
+      - ./backend/.env.production
+    environment:
+      # OVERRIDE the local MONGO_URI. 
+      # Inside Docker, 'localhost' is the container itself.
+      # We must use the service name 'mongo' to talk to the database.
+      - MONGO_URI=mongodb://mongo:27017/home_help
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  # 3. Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL} # Pass from your local .env to the build
+    container_name: home_help_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+# Define named volumes for persistence
+volumes:
+  mongo-data:
+
+# Define a shared network
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,43 @@
+
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: home_help_db_prod
+    # Usually, we don't expose DB ports to the public in production
+    volumes:
+      - mongo-prod-data:/data/db
+    networks:
+      - app-network
+
+  backend:
+    image: anandm2004/home_help-backend:v1.0
+    container_name: home_help_backend_prod
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production # Use a specific production env file
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  frontend:
+    image: anandm2004/home_help-frontend:v1.0
+    container_name: home_help_frontend_prod
+    ports:
+      - "80:80" # Standard web port for production
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  mongo-prod-data:
+
+networks:
+  app-network:
+    driver: bridge
+
+
+
